@@ -8,6 +8,6 @@ import java.util.List;
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, String> {
     List<ChatMessage> findByChatId(String chatId);
 
-    List<ChatMessage> findChatMessageBySenderIdAndRecipientId(String senderId,String recipientId);
+    List<ChatMessage> findChatMessageBySenderNickNameAndRecipientNickName(String senderId,String recipientId);
 
 }

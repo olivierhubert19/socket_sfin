@@ -16,7 +16,7 @@ public class ChatMessageService {
 
     public ChatMessage save(ChatMessage chatMessage) {
         var chatId = chatRoomService
-                .getChatRoomId(chatMessage.getSenderId(), chatMessage.getRecipientId(), true); // You can create your own dedicated exception
+                .getChatRoomId(chatMessage.getSenderNickName(), chatMessage.getRecipientNickName(), true); // You can create your own dedicated exception
         chatMessage.setChatId(chatId);
         chatMessage.setId(UUID.randomUUID().toString());
         repository.save(chatMessage);
@@ -24,6 +24,10 @@ public class ChatMessageService {
     }
 
     public List<ChatMessage> findChatMessages(String senderId, String recipientId) {
-        return repository.findChatMessageBySenderIdAndRecipientId(senderId,recipientId);
+        return repository.findChatMessageBySenderNickNameAndRecipientNickName(senderId,recipientId);
+    }
+
+    public List<ChatMessage> getAll() {
+        return repository.findAll();
     }
 }

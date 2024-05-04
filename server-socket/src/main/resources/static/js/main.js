@@ -11,18 +11,19 @@ const logout = document.querySelector('#logout');
 
 let stompClient = null;
 let nickname = null;
-let fullname = null;
+let password = null;
 let selectedUserId = null;
 let token = null;
+let token1 = null;
 
 async function loginUser(event) {
-    const nickname = document.querySelector('#nickname').value.trim();
-    const fullname = document.querySelector('#fullname').value.trim();
+     nickname = document.querySelector('#nickname').value.trim();
+    password = document.querySelector('#password').value.trim();
 
-    if (nickname && fullname) {
+    if (nickname && password) {
         const user = {
             nickName: nickname,
-            password: fullname
+            password: password
         };
         try {
             const response = await fetch('http://localhost:9001/api/user/login', {
@@ -34,8 +35,9 @@ async function loginUser(event) {
             });
             if (response.ok) {
                 const token = await response.text();
+                token1 = token;
                 localStorage.setItem('token', token);
-                connect(event, token);
+                connect(token);
             } else {
                 console.log("failed")
                 throw new Error('Login failed');
@@ -47,11 +49,12 @@ async function loginUser(event) {
     event.preventDefault();
 }
 
+
 function connect(event,token) {
     nickname = document.querySelector('#nickname').value.trim();
-    fullname = document.querySelector('#fullname').value.trim();
+    password = document.querySelector('#password').value.trim();
 
-    if (nickname && fullname) {
+    if (nickname && password) {
         usernamePage.classList.add('hidden');
         chatPage.classList.remove('hidden');
         const tokenCookie = "token="+token;
@@ -66,17 +69,14 @@ function connect(event,token) {
     event.preventDefault();
 }
 function onConnected() {
-    let queueMessage = `/user/${nickname}/queue/messages`;
-    console.log(queueMessage);
-    stompClient.subscribe(queueMessage , onMessageReceived);
     stompClient.subscribe(`/users/public`, onMessageReceived);
 
     // register the connected user
     stompClient.send("/app/user.addUser",
         {},
-        JSON.stringify({nickName: nickname, password: fullname, status: 'ONLINE'})
+        JSON.stringify({nickName: nickname, password: password, status: 'ONLINE'})
     );
-    document.querySelector('#connected-user-fullname').textContent = fullname;
+    document.querySelector('#connected-user-fullname').textContent = nickname;
     findAndDisplayConnectedUsers().then();
 }
 
@@ -104,10 +104,10 @@ function appendUserElement(user, connectedUsersList) {
 
     const userImage = document.createElement('img');
     userImage.src = '../img/user_icon.png';
-    userImage.alt = user.fullName;
+    userImage.alt = user.nickName;
 
     const usernameSpan = document.createElement('span');
-    usernameSpan.textContent = user.fullName;
+    usernameSpan.textContent = user.nickName;
 
     const receivedMsgs = document.createElement('span');
     receivedMsgs.textContent = '0';
@@ -159,20 +159,10 @@ async function fetchAndDisplayUserChat() {
     const userChat = await userChatResponse.json();
     chatArea.innerHTML = '';
     userChat.forEach(chat => {
-        displayMessage(chat.senderId, chat.content);
+        displayMessage(chat.senderNickName, chat.content);
     });
     chatArea.scrollTop = chatArea.scrollHeight;
 }
-async function fetchAndDisplayUserChat2() {
-    const userChatResponse = await fetch(`/messages/${selectedUserId}/${nickname}`);
-    const userChat = await userChatResponse.json();
-    chatArea.innerHTML = '';
-    userChat.forEach(chat => {
-        displayMessage(chat.senderId, chat.content);
-    });
-    chatArea.scrollTop = chatArea.scrollHeight;
-}
-
 
 function onError() {
     connectingElement.textContent = 'Could not connect to WebSocket server. Please refresh this page to try again!';
@@ -184,8 +174,8 @@ function sendMessage(event) {
     const messageContent = messageInput.value.trim();
     if (messageContent && stompClient) {
         const chatMessage = {
-            senderId: nickname,
-            recipientId: selectedUserId,
+            senderNickName: nickname,
+            recipientNickName: selectedUserId,
             content: messageInput.value.trim(),
             timestamp: new Date()
         };
@@ -197,13 +187,15 @@ function sendMessage(event) {
     event.preventDefault();
 }
 
-
 async function onMessageReceived(payload) {
     await findAndDisplayConnectedUsers();
     console.log('Message received', payload);
     const message = JSON.parse(payload.body);
-    if (selectedUserId && selectedUserId === message.senderId) {
-        displayMessage(message.senderId, message.content);
+    if(message.senderNickName===nickname){
+        return;
+    }
+    if (selectedUserId && selectedUserId === message.senderNickName) {
+        displayMessage(message.senderNickName, message.content);
         chatArea.scrollTop = chatArea.scrollHeight;
     }
 
@@ -213,7 +205,7 @@ async function onMessageReceived(payload) {
         messageForm.classList.add('hidden');
     }
 
-    const notifiedUser = document.querySelector(`#${message.senderId}`);
+    const notifiedUser = document.querySelector(`#${message.senderNickName}`);
     if (notifiedUser && !notifiedUser.classList.contains('active')) {
         const nbrMsg = notifiedUser.querySelector('.nbr-msg');
         nbrMsg.classList.remove('hidden');
@@ -224,7 +216,7 @@ async function onMessageReceived(payload) {
 function onLogout() {
     stompClient.send("/app/user.disconnectUser",
         {},
-        JSON.stringify({nickName: nickname, password: fullname, status: 'OFFLINE'})
+        JSON.stringify({nickName: nickname, password: password, status: 'OFFLINE'})
     );
     window.location.reload();
 }
@@ -233,3 +225,32 @@ usernameForm.addEventListener('submit', connect, true); // step 1
 messageForm.addEventListener('submit', sendMessage, true);
 logout.addEventListener('click', onLogout, true);
 window.onbeforeunload = () => onLogout();
+
+//------------------------------------------------------------------------------------------------
+
+async function connect1(token) {
+    nickname = document.querySelector('#nickname').value.trim();
+    password = document.querySelector('#password').value.trim();
+
+    if (nickname && password) {
+        usernamePage.classList.add('hidden');
+        chatPage.classList.remove('hidden');
+        const tokenCookie = "token="+token;
+        document.cookie = tokenCookie + "; domain=localhost; path=/";
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        const headers = {
+            Cookie: tokenCookie
+        };
+        // Tránh gọi event.preventDefault() ở đây
+        stompClient.connect(headers, onConnected, onError);
+    }
+}
+
+async function Test() {
+    for (let i = 0; i < 1000; i++) {
+        console.log(i);
+        console.log(token);
+        await connect1(token);
+    }
+}

@@ -12,7 +12,7 @@ import java.util.Map;
 @Configuration
 public class NewHandshakeInterceptor implements HandshakeInterceptor {
 
-        @Autowired
+       @Autowired
         private JwtService jwtService;
 
         public NewHandshakeInterceptor(JwtService jwtService){
@@ -24,15 +24,20 @@ public class NewHandshakeInterceptor implements HandshakeInterceptor {
                                        WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
             String cookieHeader = request.getHeaders().getFirst("cookie");
             System.out.println("Header "+cookieHeader);
-            String[] token = cookieHeader.split("=");
-            // Trả về true để cho phép handshake
-            System.out.println(jwtService.validateJwtToken(token[1]));
-            return !jwtService.validateJwtToken(token[1]);
+            String[] token;
+            if(cookieHeader!=null) {
+                token = cookieHeader.split("=");
+                System.out.println(jwtService.validateJwtToken(token[1]));
+                return !jwtService.validateJwtToken(token[1]);
+            }else{
+                return false;
+            }
+
         }
 
         @Override
         public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
                 WebSocketHandler wsHandler, Exception exception) {
-            System.out.println(request.getURI());
+            System.out.println(request.getURI()+" "+response.getHeaders());
         }
 }

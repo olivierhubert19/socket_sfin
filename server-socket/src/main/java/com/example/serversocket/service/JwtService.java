@@ -21,7 +21,7 @@ public class JwtService {
     public String generateToken(User user) {
         String jwt = Jwts
                 .builder()
-                .setSubject(user.getId()+" "+user.getFullName())
+                .setSubject(user.getNickName()+" "+user.getFullName())
                 .setIssuedAt(new Date())
                 .setExpiration( new Date(new Date().getTime() + 1000 * 60 * 60 * 24))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)

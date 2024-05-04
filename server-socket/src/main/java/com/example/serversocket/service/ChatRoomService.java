@@ -15,7 +15,7 @@ public class ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
 
     public String getChatRoomId(String senderId, String recipientId, boolean createNewRoomIfNotExists) {
-        Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findBySenderIdAndRecipientId(senderId, recipientId);
+        Optional<ChatRoom> chatRoomOptional = chatRoomRepository.findBySenderNickNameAndRecipientNickName(senderId, recipientId);
 
         if (chatRoomOptional.isPresent()) {
             // Nếu phòng chat tồn tại, trả về chatId của phòng đó
@@ -34,23 +34,23 @@ public class ChatRoomService {
 
 
 
-    private String createChatId(String senderId, String recipientId) {
-        var chatId = String.format("%s_%s", senderId, recipientId);
+    private String createChatId(String senderNickName, String recipientNickName) {
+        var chatId = String.format("%s_%s", senderNickName, recipientNickName);
 
         ChatRoom senderRecipient = ChatRoom
                 .builder()
                 .id(UUID.randomUUID().toString())
                 .chatId(chatId)
-                .senderId(senderId)
-                .recipientId(recipientId)
+                .senderNickName(senderNickName)
+                .recipientNickName(recipientNickName)
                 .build();
 
         ChatRoom recipientSender = ChatRoom
                 .builder()
                 .id(UUID.randomUUID().toString())
                 .chatId(chatId)
-                .senderId(recipientId)
-                .recipientId(senderId)
+                .senderNickName(recipientNickName)
+                .recipientNickName(senderNickName)
                 .build();
 
         chatRoomRepository.save(senderRecipient);

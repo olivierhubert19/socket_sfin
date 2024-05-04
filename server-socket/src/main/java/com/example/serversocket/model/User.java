@@ -12,7 +12,6 @@ import lombok.*;
 @Table(name = "user")
 public class User {
     @Id
-    private String id;
     private String nickName;
     private String fullName;
     private String password;
